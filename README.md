@@ -237,11 +237,45 @@ Type： 数据类型
     
     练习： 
       1、用两总方式 截取s_emp;表中first_name 的后三位；
+      	first: select substr(first_name, -3, 3) from s_emp;
+	second: select substr(first_name,(length(first_name)-3)) from s_emp;
       2、列出s_emp表中每个员工ID，first_name，和年收入（考虑提成），筛选出年输入超过15000员工的信息，并对年收入降序排序
       测试:年收入的别名时候可以在where、order by 子句中使用；
-      3、查看s_dept、s_region两表结构和数据。
+      	select id,first_name,12*salary*(val(commission_pct,0)/100 + 1) YearSalary from s_emp where YearSalary > 15000 order by YearSalary desc; (**error**)
+	select id,first_name,12*salary*(nvl(commission_pct, 0)+1) YearSalary from s_emp where 12*salary*(nvl(commission_pct, 0)+1) > 15000 order by 12*salary*(nvl(commission_pct, 0)+1) desc;(**right**) //12*salary*(val(commission_pct,0)/100 + 1) YearSalary 其中YearSalary 不能用于where 或 order by 后面。
+	3、查看s_dept、s_region两表结构和数据。
                 |        |
               部门表   地区表
+<s_dept> SQL> select id,name,region_id from s_dept;
+
+	ID NAME 		      REGION_ID
+---------- ------------------------- ----------
+	10 Finance			      1
+	31 Sales			      1
+	32 Sales			      2
+	33 Sales			      3
+	34 Sales			      4
+	35 Sales			      5
+	41 Operations			      1
+	42 Operations			      2
+	43 Operations			      3
+	44 Operations			      4
+	45 Operations			      5
+
+	ID NAME 		      REGION_ID
+---------- ------------------------- ----------
+	50 Administration		      1
+<s_region> SQL> select id,name from s_region;
+
+	ID NAME
+---------- --------------------------------------------------
+	 1 North America
+	 2 South America
+	 3 Africa / Middle East
+	 4 Asia
+	 5 Europe
+12 rows selected.
+
   6）函数和分组语句
   
   7）询语句嵌套（子查询）
