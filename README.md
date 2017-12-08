@@ -238,11 +238,14 @@ Type： 数据类型
     练习： 
       1、用两总方式 截取s_emp;表中first_name 的后三位；
       	first: select substr(first_name, -3, 3) from s_emp;
-	second: select substr(first_name,(length(first_name)-3)) from s_emp;
+	second: select substr(first_name,(length(first_name)-2) from s_emp;
       2、列出s_emp表中每个员工ID，first_name，和年收入（考虑提成），筛选出年输入超过15000员工的信息，并对年收入降序排序
       测试:年收入的别名时候可以在where、order by 子句中使用；
       	select id,first_name,12*salary*(val(commission_pct,0)/100 + 1) YearSalary from s_emp where YearSalary > 15000 order by YearSalary desc; (**error**)
-	select id,first_name,12*salary*(nvl(commission_pct, 0)+1) YearSalary from s_emp where 12*salary*(nvl(commission_pct, 0)+1) > 15000 order by 12*salary*(nvl(commission_pct, 0)+1) desc;(**right**) //12*salary*(val(commission_pct,0)/100 + 1) YearSalary 其中YearSalary 不能用于where 或 order by 后面。
+	select id,first_name,12*salary*(nvl(commission_pct, 0)+1) YearSalary from s_emp where 12*salary*(nvl(commission_pct, 0)+1) > 15000 order by 12*salary*(nvl(commission_pct, 0)+1) desc;(**right**) //12*salary*(val(commission_pct,0)/100 + 1) YearSalary 其中YearSalary 不能用于where 但能够在 order by 后面。
+	
+	from --->where --->select--->order by 执行顺序
+	
 	3、查看s_dept、s_region两表结构和数据。
                 |        |
               部门表   地区表
@@ -276,7 +279,162 @@ Type： 数据类型
 	 5 Europe
 12 rows selected.
 
-  6）函数和分组语句
-  
+/2017.12.08 +8day two_day***********************************************************************************/
+
+  6）数字函数和分组语句
+     round（x[,y]） //四舍五入
+     缺省y时，默认y=0 比如： round(4.67,1) = 4.7;  round(342.4532,-2) = 300
+     trunc (x[,y]) //截断
+     缺省y时，默认y=0 比如： trunc(4.67,1) = 4.6;  trunc(342.4532,-2) = 300
+     floor(x) //<=x的最大整数
+     ceil(x) //>=x的最小整数
+     
+     日期类型和常用日期函数
+     	格式 dd_MON_yy 08_DEC_17 中文： dd_n月_yy
+	系统日期 :sysdate  // select sysdate from dual;
+	日期格式的各个部分：
+		yy 两位数字的年 17		 mm 两位数字的月 12				    dd 两位数字的日 08
+		yyyy 4位数字的年 2017	  MON(mon) 月份单词的前三个字母	DEC(dec)          DY(dy) 星期几单词的前三位 （FRI）fri
+		year 年的全拼		   MONTH(month)月份单词的全拼 DECEMBER(december)    DAY(day) 星期几单词的全拼	FRIDAY(friday)
+    		hh24 24小时两位数字 10 
+		hh 12小时制 14-->02
+		mi 两位数字分钟 30
+		ss 两位数字的秒 22
+		cc 世纪 21
+		AM(am) 上午下午  AM(PM)/am(pm)
+		
+		select to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss: day cc am') from dual;
+	日期的算术运算	
+		日期加一个数字
+			select sysdate + 27 from dual;
+		日期减一个数字 
+			select sysdate - 27 from dual;
+		一个日期减去另一个日期
+			select sysdate - to_date('24-JAN-91') from dual;
+		januray february match april may june july august september octorber november december
+		monday tuesday wednesday thursday friday saturday  sunday weekend week workday weekday
+		
+		常用的日期函数
+		add_moths(datel,n) : 在某个日期dat1上，加上n个月
+			SQL> select sysdate, add_months(sysdate,3) from dual;
+			SYSDATE   ADD_MONTH
+			--------- ---------
+			08-DEC-17 08-MAR-18
+		months_between(datel, date2):两个日期相差的月数（带小数点）
+			SQL> select sysdate, months_between(sysdate,'01-JAN-00') from dual;
+			SYSDATE   MONTHS_BETWEEN(SYSDATE,'01-JAN-00')
+			--------- -----------------------------------
+			08-DEC-17			   215.241003
+		next_day(detel, wd):返回dateld的下一个wd(星期几)
+			SQL> select sysdate, next_day(sysdate,'sunday') from dual;//sunday 可以用数字代表1~7
+			SYSDATE   NEXT_DAY(
+			--------- ---------
+			08-DEC-17 10-DEC-17
+		last_day(datel):返回date1所在月份的最后一天
+			SQL> select sysdate,last_day(sysdate) from dual;
+			SYSDATE   LAST_DAY(
+			--------- ---------
+			08-DEC-17 31-DEC-1
+		
+		类型转换函数
+		    to_char(date|n[,fmt])
+		    	数字--->字符串 : select to_char(12) from dual;
+		    	针对数字的格式化： 9  小数点前代表0——9，小数点后代表1——9
+					 0  小数点代表前导0，小数点后代表0——9
+					 .  小数点
+					 $  美元符号
+					 L  本地货币符号//环境配置决定的
+					 ，  分割符号
+			s格式字符串以‘fm’开头： ‘fm$999,999.0’   select to_char(1234.56, 'fm$099,999.000') from dual;
+			
+			日期--->字符串  ：select to_char(sysdate, 'yyyy-mm-dd hh:mi:ss') from dual;	
+		   to_date(s[,fmt])		
+		       select to_date('01-JAN-00') from dual;
+		       select to_char(start_, 'yyyy-mm-dd hh24:mi:ss') from testdate;
+		   to_number(s[,fmt])
+		   	把字符串s按照给定的格式字符串fmt转换成数字
+			隐式转换：
+			    select id,first_name from s_emp where id='1'0;
+			    select sysdate-to_number(5) from dual;
+			    
+			    select to_number('$001,234.56', '$099,999.00') from dual;
   7）询语句嵌套（子查询）
+  	一个函数返回值作为另一个函数的参数。
+	 select id,first_name,nvl(to_char(manager_id), 'BOOS') from s_emp ;
+/*********************************************************************************************************************/
+							第二章节
+/ ********************************************************************************************************************/
+2.表链接
+  查询的数据来自于两张表：s_emp（id,fris_name）， s_dept （部门表）
+  set pagesize 30 
+  select s_emp.id, s_dept.frist_name,s_dept.name from s_emp,s_dept where s_emp.dept_id = s_dept.id;
+  
+  select s_emp.id, s_emp.first_name, s_dept.name from s_emp,s_dept where s_emp.dept_id = s_dept.id;
   
+  表的别名 ： 语法 表名 别名 //**一旦命名别名，原表名及失效，就不能再使用原表名了**
+  select e.id, e.frist_name, d.name from s_emp e,s_dept d where e.dept_id = d.id;
+  
+  关联的多张表中，字段名没有重复的可以省略字段名前面的表名或别名。
+  select e.id, frist_name, name
+  	from s_emp e,s_dept d
+	where e.dept_id = d.id;
+  表连接类型：
+  	内连接： 等值连接 非等值连接 自连接
+	外连接： 等值连接 非等值连接 自连接
+  内连接：符合关联条件的行被选中，不符合条件的被过滤掉
+  	update s_emp set dept_id = null where id = 1; commit; //等值连接使用=等号作为条件依据
+	create tabel salgreade (
+		grade nmber(7) primary key,
+		losal number(11,2),
+		hisal number(11,2)
+		);   //创建表
+	insert into salgrade values(1,700,1200); //表中插入数据
+	
+	非等值连接：
+	s_emp:    id,first_name,salary
+	salgrade: grade
+	s关联字段： salary	losal、hisal
+	s关联条件： salary between losal and hisal ||salary >= losal and salary <= hisal;
+	select e.id,e.first_name,e.salary,g.grade
+		from s_emp e,salgrade g
+			where e.salary between g.losal and g.hisal;
+
+？？？？
+	自连接：在逻辑上，把一张表当成两张表，使用表链接的语法执行的查询操作。
+	select e.id, e.first_name, m.id, m.manager_id
+		from s_emp e, s_emp m
+			where e.manager_id = m.id;
+？？？？外链接
+    	外链接的结果集 = 内连接的结果集 + 匹配不上的行 
+	oracle 中的外链接语法 （+）
+	关联条件：表1.字段（+） 运算符 表2.字段		 		表1.字段 运算符 表2.字段（+）
+		 内连接的结果集（+）表2中匹配不上的数据			内连接的结果集 + 表1中匹配不上的数据
+	自连接：
+	需求：列出所有普通员工
+	1)列出员工及领导的信息
+	    select e.id, e.first_name,m.id,m.first_name
+	    	from s_emp e, s_emp m
+			where e.manager_id = m.id;
+	2)结果中药包含领导表中的全部信息
+	    select e.id, e.first_name,m.id,m.first_name
+	    	from s_emp e, s_emp m
+			where e.manager_id （+）= m.id;
+	3）普通员工没有下属，筛选出所有普通员工
+	    select e.id, e.first_name,m.id,m.first_name
+	    	from s_emp e, s_emp m
+			where e.manager_id （+）= m.id
+				and e.id is null;
+	4)去除员工信息（只保留领导表中的信息）
+	    select m.id,m.first_name
+	    	from s_emp e, s_emp m
+			where e.manager_id （+）= m.id
+				and e.id is null
+	等值连接
+	    列出所有员工的id,first_name和部门名称
+	    select e.id,e.first_name ,d.name from s_emp e,s_dep d where e.dept_id = d.id(+);
+	    列出员工的id,first_name和不猛名称，包括没有员工的部门
+	    select e.id,e.first_name,d.name from s_emp e,s_dept d where e.dept_id(+) = d.id;
+	非等值连接
+	    列出员工及工资级别信息，包括所有级别
+	    select s_emp e, salgrade g where e.salary(5) between g.losal and g.hisal;
+	
