@@ -437,4 +437,309 @@ Type： 数据类型
 	非等值连接
 	    列出员工及工资级别信息，包括所有级别
 	    select s_emp e, salgrade g where e.salary(5) between g.losal and g.hisal;
+	    
+/**************************************************************************************************************/
+
+  SQL99标准中的表链接
+  内连接：
+      select 字段列表
+          from 表1 inner jion 表2
+	       on 关联条件
+      select e.id,e.first_name, d.name
+          from s_emp e inner join s_dept d 
+	       on e.dept_id = d.id
+	           where e.salary > 1400;
+  外链接：
+      左外链接：
+          左外链接的结果集 = 内连接的结果集 + 左表匹配不上的数据
+	  select 字段列表
+	      from 左表 left [outer] join 右表
+	          on 关联条件；
+      右外链接：
+          右外链接的结果集 = 内连接的结果集 + 右表匹配不上的数据
+	  select 字段列表
+	      from 左表 right [outer] join 右表
+	          on 关联条件；
+      全外链接：
+          全外链接的结果集 = 内连接的结果集 + 两表匹配不上的数据
+	  select 字段列表
+	      from 左表 full [outer] join 右表
+	          on 关联条件；
+   minus:返回第一个结果集减去第二个结果集，剩余的记录
+     select id from s_emp minus select is from s_dept;
+   union：两个结果集的字段列表的数量和数据必须匹配
+/************************************************************************************************************/ 
+						第三章
+/************************************************************************************************************/ 
+3.组函数和分组
+    组函数：
+    常用组函数： 
+    count 统计一组数据的行数 //参数是任何类型， 而且可以使用*
+        select count(salary) form s_emp;
+        select count(*) from s_emp where salary > 1400;
+    max 统计一组数据的最大值
+    min 统计一组数据的最小值
+        参数可以 number date varchar2(char)
+	select max(salary),min(salary) from s_emp;
+	select max(start_date),min(start_date) from s_emp;
+    sum 统计一组数据的和
+    avg 统计一组数据的平均值
+        select sum（salary），avg(salary) from s_emp;
+    
+    组函数的参数可以使用distinct
+        select count(title),count(distinct title) from s_emp;
 	
+  分组：语法 group by 分组标准 （按照分组标准，把数据分到不同的组里） 	
+        select 
+	  from 
+	    where
+	      group by
+	       ...
+	       order by
+        按照部门编号分组，统计每个部门的人数
+	 select count(*) cnt
+	   from s_emp
+	     where 1=1
+	       group by dept_id;
+	按照部门标号分组，统计每个人部门工资大于1200的人数
+	  select dept_id，count(*) cnt
+	    from s_emp
+	      where salary > 1200
+	       group by dept_id;
+        按照部门编号分组，统计每个部门工资大于1200的人，显示部门名称及人数。
+	   select e.dept_id，count(d.id) cnt
+	    from s_emp e, s_dept d
+	      where salary > 1200 and e.dept_id = d.id
+	       group by dept_id;  //错误，d.name不是分组标准
+	       在分组语句中，能够列出的字段必须要是分组标准或 组函数的参数
+            select e.dept_id,d.name,count(d.id) cnt
+	    from s_emp e, s_dept d
+	      where salary > 1200 and e.dept_id = d.id
+	       group by e.dept_id, d.name; // right
+        按照部门编号分组，统计工资超过1200的分数超过1个的部门 
+	    select dept_id, count(id) cnt
+	      from s_emp
+	        where salary > 1200 and count(id) > 1
+		 group by dept_id; //错误，在where子句不能使用组函数
+            having 子句：
+	      having 条件
+	      功能：分组后，根据条件筛选符合条件的组
+	      
+	      select dept_id, count(id) cnt
+	      from s_emp
+	        where salary > 1200 
+		 group by dept_id 
+		   having count（id）> 1;//having 子句中也不能使用别名
+		   
+	语法顺序：
+	      select                  ----字段
+	        from                  ----表
+		  where               ----从表中筛选符合条件的行
+		    group by          ----根据分数标准 统计每组数据结果
+		      having          ----根据条件筛选结果
+		        order by      ----根据结果排序显示
+			
+/************************************************************************************************************/ 
+						第四章
+/************************************************************************************************************/
+
+4.子查询
+  子查询就是一条select 语句嵌入到另一条SQL语句中，作为其中的一部分，被嵌入的select语句称为子查询。
+  外层的SQL语句可以称为父查询。
+  
+  先执行括号里面的语句在执行其他语句。
+  
+  where子句中
+    单行单列的结果
+    子查询的结果集是单值的时候，可以使用比较运算符（>、=等）
+        查询 职位和‘ben’的职位相同的员工信息
+	select title from s_emp where first_name = ‘ben’;
+	
+	select id, first_name,title from s_emp where titl = (select title from s_emp where first_name = ‘ben’);
+	
+    多行多列的结果集
+    子查询的结果集是多行的，
+    where子句中使用的运算符必须是可以处理多值的，比如in、not in、 all、 any等（all、 any需要和比较符号配合使用，>all、 <any等）。
+    
+    --使用子查询列出s_emp表中的领导信息。
+    1）列出所有领导的编号
+    select distinct manager from s_emp；
+    2）根据编号在累出其他信息
+    select id,first_name,title from s_emp where id in(select distinct manager_id from s_emp);
+    
+    select id,first_name,title from s_emp where id not in(select distinct manager_id from s_emp);//error
+    结果为空用=或！=结果永远为假
+    select id,first_name, title from s_emp where id not in (select distinct namager from s_emp where manager_id is not null);//right
+    
+    子查询中需要引用外层查询的字段数据，可以使用exists关键字。
+    --列出有员工的部门信息：
+     select * form s_dept d where exists (select * form s_emp e where e.dept_id = d.id);
+     
+     也可以在having后面使用子查询
+     按照部门编号分组，统计每个部门的平均工资，显示出平均工资高于编号为42的。
+     1）列出平均工资高于1000的部门信息
+     select avg(salary) from s_emp where dept_id = 42;
+     2)列出结果
+     select avg(salary) from s_emp  group by dept_id having avg(salary) >(select avg(salary) from s_emp where dept_id = 42);
+     
+     form子句中
+     任何一条合法的select语句 ,都会在内存中创建一个临时的内存表。 
+     如果要在一个子查询的语句中继续查询，那么则子查询就会出现在from语句中，这个子查询可以称为一个匿名试图。
+     --列出人数操作2个的部门：
+     select dept_id,count(id) cnt from s_emp group by dept_id having count(id)>2;
+     select *  from (select dept_id,count(id) cnt from s_emp group by dept_id) where cnt>2;//在from后面表达式必须取别名 否则只能写表达式；
+     
+     --列出工资高于本部门平均工资的员工的信息
+     select e.di, e.first_name, e.salary,a.avg from s_emp e, (select dept_id,avg(salary) avg from s_emp group by dept_id) a where
+     a.id = e.dept_id and a.avg < e.salary;
+     
+     select 之后
+     把子查询放到select子句中，可以认为是外链接的另一种方式，使用更为灵活。
+     --列出所有员工的编号、名字、工资和所在部门的名称。
+     select e.id,e.first_name,e.dept_id,d.name from s_emp e,s_dept d where e.dept_id = d.id（+）;
+     select e.id,e.first_name,e.salary,(select name from s_dept d where d.id = e.dept_id) from s_emp e;
+     
+     --练习
+     列出工资比公司所有人的平均工资高的员工的信息。
+     select id,first_name, salary from s_emp where salary > (select avg(salary) from s_emp); //在where中不能用组函数操作
+     列出人数超过两个的部门信息，包括部门名称和人数。
+     select e.dept_id, d.name, count(e.id) from s_emp e, s_dept d where e.dept_id = d.id group by d.name,e.dept_id having count(e.id) > 2;
+     
+/************************************************************************************************************/ 
+						第五章
+/************************************************************************************************************/
+  命名规格：对象名_姓名缩写_座位号
+表操作：
+  标识符命名
+  1）只能使用英文字母、数字、_、$、#
+  2)第一个字符必须是字母开始
+  3）不能喝关键字重名
+  4）不能喝其他的数据库对象重名
+  5）1~30位
+创建和删除表
+   create table 表名 （
+   字段名 数据类型， 
+   ... ...
+   字段名 数据类型
+   ）；
+   
+   --举例
+   创建一个员工表，包含以下字段：
+   编号 数字 
+   名字 字符串
+   工资 数字
+   入职日期 日期
+   create table emp_new_1(
+     id number(7),
+     name varchar2(25),
+     salary number(11.2),
+     start_date date
+   );
+   create table emp_new_1(
+  2  id number(7),
+  3  name varchar2(25),
+  4  salary number(11,2),
+  5  start_date date);
+  
+   删除表
+   语法：
+   drop table 表名；
+   举例： drop table emp_new_1；
+   
+  DML语句
+  insert
+    语法： insert into 表名[（字段列表）] values （值列表）；
+    字段列表和值列表的数量、顺序和数据类型必须一致
+    字段列表缺省时，表示表中的全部字段，并且顺序和表结构一致
+    举例：
+    insert into emp_new_1（id, name, salary, start_date) values(1, 'test1',1200, '11-DEC-17');
+    commit;//提交
+    	ID NAME 			 SALARY START_DAT
+---------- ------------------------- ---------- ---------
+	 1 test 			   1200 11-DEC-17
+    insert into emp_new_1 (id, name, start_date, salary) values (2, 'test2', sysdate, 1300);
+    	ID NAME 			 SALARY START_DAT
+---------- ------------------------- ---------- ---------
+	 1 test 			   1200 11-DEC-17
+	 2 test2			   1300 11-DEC-17
+
+    insert into emp_new_1 values(3, 'test3', 1500, sysdate); //error
+    insert into emp_new_1 values(4,'test4',  sysdate)//error
+    值列表值提供部分值，必须给出字段列表，所有没有给出值的字段，必须允许为NULL；
+    insert into emp_new_1 (id, name, start_date, salary) values （4,'test4',  sysdate）；
+    insert into emp_new_1 (id, name, salary, start_date) values(4, 'test3',null, sysdate);
+    	ID NAME 			 SALARY START_DAT
+---------- ------------------------- ---------- ---------
+	 1 test 			   1200 11-DEC-17
+	 2 test2			   1300 11-DEC-17
+	 4 test3				11-DEC-17
+	 
+  update
+    update 表名 set 字段=新值[,字段=新值，...]
+        [where 子句]
+    举例：
+    update emp_new_1 set salary = 2000 where salary is null;
+    	ID NAME 			 SALARY START_DAT
+---------- ------------------------- ---------- ---------
+	 1 test 			   1200 11-DEC-17
+	 2 test2			   1300 11-DEC-17
+	 4 test3			   2000 11-DEC-17
+    update emp_new_1 set salary = salary + 500;
+    	ID NAME 			 SALARY START_DAT
+---------- ------------------------- ---------- ---------
+	 1 test 			   1700 11-DEC-17
+	 2 test2			   1800 11-DEC-17
+	 4 test3			   2500 11-DEC-17
+
+  delete
+  删除表中的数据：
+  语法 delete[from] 表名 [where子句]；
+  delete emp_new_1；
+  rollback; //撤回
+  
+  delete from emp_new_1 where id = 1;
+  commit;
+  
+  truncate table emp_new_1;//删除无法撤销  属于 ddl语句 不能撤销
+  
+  TCL语句（事务控制语句）
+  事务控制语句的含义： 
+  commit； 确认事务 提交所有没提交的操作
+  rollback；回滚事务 撤销所有没有提交的操作
+  savepoint 保存点； 创建保存点
+  rollback to 保存点 撤销到保存点的位置
+  
+    select和事务无关 
+    ddl自动隐式提交事务
+    dml语句默认属于显示提交
+  
+  事务具有的特性（acid）
+  1)a.原子性（Atomicity） 事务中的语句是一个不可分割的整体。
+    if a&&b
+      commit;
+    else 
+      rollback;
+  2)c.一致性（Consistency） 事务执行的结果必须是数据库从一种状态变为另一种一致性状态 //既a和b的总和不变
+  3）i.隔离性（Isolation） 一个事务对数据所做的改变，在提交之前，对于其他的事务是不可见的。
+  4）d.持久性（Durability） 事务一旦提交，对数据库数据所做的改变就是永久的。
+  
+  部分成功部分失败
+    insert into t values(1,'1');
+    savepoint a;
+    insert into t values(2,'2');
+    savepoint b;
+    insert into t values(3,'3');
+    savepoint c;
+    insert into t values(4,'4');
+    savepoint d;
+    rollback to b;
+    commit;
+    
+    练习：
+    --1.使用查询语句创建表
+    create table 表名 as  select 语句；
+    create table emp_new_1  as select * from s_emp;
+    --2.给‘Carmen’的多有下属涨工资
+    查询 编号 ，根据编号找下属，  根据下属编号涨工资
+    --3.删除与‘ben’同一部门的员工
+    查询‘ben’部门编号， 更具部门编号删除员工
