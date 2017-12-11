@@ -741,5 +741,7 @@ Type： 数据类型
     create table emp_new_1  as select * from s_emp;
     --2.给‘Carmen’的多有下属涨工资
     查询 编号 ，根据编号找下属，  根据下属编号涨工资
+    update (select salary from emp_new_1 where first_name in (select first_name from emp_new_1 where manager_id = 1)) set salary = salary + 500;
     --3.删除与‘ben’同一部门的员工
     查询‘ben’部门编号， 更具部门编号删除员工
+    delete from emp_new_1 where id in (select id from s_emp where dept_id = (select dept_id from s_emp where first_name = 'Bela'));
