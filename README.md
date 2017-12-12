@@ -745,3 +745,296 @@ Type： 数据类型
     --3.删除与‘ben’同一部门的员工
     查询‘ben’部门编号， 更具部门编号删除员工
     delete from emp_new_1 where id in (select id from s_emp where dept_id = (select dept_id from s_emp where first_name = 'Bela'));
+    
+/Oracal +8day_4day********************************************************************************************/
+
+约束：constraint
+  1.1概念
+  对数据库表中添加的限制、
+
+  1.2具体类型
+  1)主键约束 primary key :值唯一 非空 一个表中只能有一个主键
+  2)唯一约束 unique ：不能重复 允许为null 一个表中可以有多个唯一约束
+  3)非空约束 not null :值不能为空
+  4)检查约束 check（检查约束表达式）：之必须能够使检查约束表达式为真
+  check（age >= 15 and age <= 20)
+  5)外键约束 foreign key	references ： 保证数据完整性
+	实体完整性：主键、唯一
+	域完整性： 数据类型、非空、检查约束（对列的要求）
+	引用完整性： 外键
+	自定义完整性： 触发器
+
+  1.3 约束的实现方式
+  1)列级约束 ： 在创建完表中一个字段后，直接在后面添加的限制
+  2)表级约束 ： 再创建完表中的所有字段后，逗号隔开 添加的约束
+
+  1.4约束的实施语法
+  主键约束
+        列级实现 : 系统自动为约束命名
+	create table emp_new_2(
+	  id number primary key,
+	  name varchar(25)
+	);
+	insert into emp_new_2 values(1, 'test');
+	commit;
+	insert into emp_new_2 values(1, 'test1');
+	ERROR at line 1:
+ORA-00001: unique constraint (SYSTEM.SYS_C005208) violated //违反了唯一约束 主键字段不能重复
+	insert into emp_new_2 values( 'test2');
+	ERROR at line 1:
+ORA-00947: not enough values //主键不能为空
+	
+	手动为约束命名
+	constraint 约束名 约束说明
+	表名_字段名_约束类型
+	drop tabel emp_new_2;
+	create table emp_new_2(
+	  id number constraint testcons primary key,
+	  name varchar(25)
+	);
+	
+  表级实现 ：组合主键（复合主键）
+	drop table emp_new_2;
+	create table emp_new_2（
+	  id number primary key,
+	  userid varchar2(18）primary key,
+	  name varchar2(25)
+	);
+	//ERROR only use one primary key.
+	
+	create table emp_new_2（
+	  id number ,
+	  userid varchar2(18）,
+	  name varchar2(25),
+	  primary key（id，userid）//不能两个都同时重复
+	);
+
+	注意：不建议使用组合主键
+
+  唯一、非空和检查约束
+	创建一张表，四个字段： 编号 数字 主键、 省份证号 字符串 唯一 、姓名 字符串 非空、工资 数字 不能低于2000
+	列级实现：
+	create tabel emp_new_2(
+	  num number(7) primary key,
+	  id varchar2(18) unique,
+	  name varchar2(40) not null,
+	  salary number(11,2)check(salary >= 2000)
+	);
+
+	insert into  emp_new_2 values(1, '510623199321241117', 'csdangyi', 2120);
+ERROR at line 1:
+ORA-00001: unique constraint (SYSTEM.SYS_C005212) violated
+
+	insert into  emp_new_2 values(2, null, 'zhangyi', 2300);
+1 row created.78
+
+	insert into  emp_new_2 values(3, '510623199112241116', null, 2300);
+ERROR at line 1:
+ORA-01400: cannot insert NULL into ("SYSTEM"."EMP_NEW_2"."NAME")
+
+	insert into  emp_new_2 values(4, '510623199112241117', 'zhanguy', 1500);
+ERROR at line 1:
+ORA-02290: check constraint (SYSTEM.SYS_C005211) violated
+
+	一个表中可以有多个唯一约束：
+	create tabel emp_new_2(
+	  num number(7) unique,
+	  id varchar2(18) unique,
+	  name varchar2(40) not null,
+	  salary number(11,2)check(salary >= 2000)
+	);
+
+	表级实现：
+	create tabel emp_new_2(
+	  num number(7) ,
+	  id varchar2(18),
+	  name varchar2(40) not null,
+	  salary number(11,2), <---***
+	  constraint testcons_id primary key (id),
+	  constraint testcons_uid unique(uerid),
+	  constraint tsetcons_sal check(slaryy >= 2000)
+	);
+	not null 约束在业余层面上，没有联合非空的需求，所有Oracle 提供非空约束的表级实现。
+
+  外键约束
+ 	概念：一个表中的某个字段值受到另一张表的某个字段限制。
+	子表（从表），外键所在的表
+	主表（父表）：数据被引用的表
+	从表中外键字段的值 必须来自于 主表中的对应字段（主表中的唯一性字段，一般是主键字段）或者为null
+
+	一般先创建主表，在创建从表。
+	除非先不考虑外键关系，创建完表 之后通过更改表的操作添加外键。
+	create table parent(
+	  id number primary key,
+	  name varchar2(20)
+	);
+	create table chile(
+	  id number primary key,
+	  c_name varchar2(25),
+	  p_id number references parent(id)
+	);
+	
+ 	dml语句
+	--插入语句 insert 
+	insert into parent values(1,'a');
+	insert into parent values(2,'b');
+	insert into parent values(3,'c');
+	commit;
+	insert into chile values(1,'aa',1);
+	insert into chile values(2,'bb',2);
+	insert into chile values(3,'cc',2);
+	insert into chile values(4,'dd',3);
+ERROR at line 1:
+ORA-02291: integrity constraint (SYSTEM.SYS_C005216) violated - parent key not found //违反了完整性约束 引用的主表中的数据不存在
+	更新语句 update
+	update parent set id = 3 where id = 2;
+ERROR at line 1:
+ORA-02292: integrity constraint (SYSTEM.SYS_C005216) violated - child record found //违反了完整性约束 改数据被子表使用
+	update chile set p_id = 3 where id = 2;
+ERROR at line 1:
+ORA-02291: integrity constraint (SYSTEM.SYS_C005216) violated - parent key not found //违反完整性约束 引用的数据在主表不存在
+	删除语句 delete
+	delete from parent where id = 1;
+ERROR at line 1:
+ORA-02292: integrity constraint (SYSTEM.SYS_C005216) violated - child record found //违反完整性约束 改数据被子表使用
+
+	在对主表和冲标执行dml操作时，要确保从表中数据不能孤立（外键的值必须来自于主表中主键的值或者为NULL）
+
+	删除表
+	先删除子表，在删除父表
+	drop table child;
+	drop table parent;
+若先删除父表则：
+ERROR at line 1:
+ORA-02449: unique/primary keys in table referenced by foreign keys
+
+	先去掉约束在删除表：
+	drop table 表名 cascade constraint；
+	drop table parent cascade constraint；
+	drop table child cascade constraint；
+
+	级联删除和级联置空
+	级联删除： 删除主表数据时，同时删除从表中引用改数据的行 on delete cascade;
+	级联置空： 删除主表数据时，同时将从表的外键字段设置为NULL on delete set null;
+	create table parent(
+	  id number primary key,
+	  name varchar2(20)
+	);
+	create table chile(
+	  id number primary key,
+	  c_name varchar2(25),
+	  p_id number,
+	  constraint child_pid foregin key(p_id) references parent(id) on delete cascade
+	);
+
+2.其他的数据库对象
+  序列 sequence 
+	作用：用来产生主键的值
+	创建序列： create sequence  序列名；
+	--创建一张表
+	create table test（
+	  id number primary key,
+ 	  name varchar2(25）
+	);
+	--创建序列
+	命名： 表名_主键字段名
+	create sequence test_id；
+	//序列和表相互独立的不同数据库对象，但是通长下创建一个序列是为了特定的某张主键产值。
+
+	使用序列
+	nextval:产生一个新的序列值
+	currval:当前的序列值
+	第一次使用序列，必须使用nextval
+	insert into test values(
+	  test_id.nextval,
+	  'test'||test_id.currval
+	);//默认MaxValues = 1~10^27
+
+	删除序列
+	drop sequence 序列名；
+	相关数字字典：user_sequences
+	语法
+	  create sequence 序列名
+？？？？
+	
+  索引 index ：作用提高查询效率，用空间和时间换取时间。
+	系统会自动为表的唯一性字段创建索引。
+	set timing on 显示语句执行的时间
+
+	新建表
+	create table testIndex（
+	  id number primary key,
+	  name varchar2(25)
+	);
+	
+	for var_i in 1..100000 loop
+	create sequence testIndex_id(
+	  testIndex_id.nextval, 't'|| testindex_id.currval
+	);
+	commit;
+	end loop;
+	
+	创建索引
+	create index 索引名 on  表名（字段名1，... ...）;
+	删除索引
+	drop index 索引名；
+
+	索引相关的数字字典：user_indexes;
+
+  视图 view :作用 视图本质上就是一条select语句 相对视图对应的数据，视图本身 占用的空间几乎可以不计。
+	作用
+	1).简化查询操作
+	2).数据安全 一份原始数据可以做不同的呈现
+	创建视图
+	--语法 ： create [or replace] view 视图名[别名列表]  as  select 语句 [with check option] [with read only]
+	在表emp_mew_1 上创建视图
+	create or replace view vw_emp as
+	  select id,last_name name, salary, dept_id did from emp_new_1
+	  where dept_id in (31,32,50,34);
+	如果视图中不包含所有的非空字段，不能执行insert
+
+	create or replace view vm_emp_1 as
+	  select dept_id, avg(salary) avgsal from emp_new_1
+  	  group by dept_id;
+
+	insert into vm_emp_1 values(31, 4400);//update.delete 都不允许
+ERROR at line 1:
+ORA-01733: virtual column not allowed here
+	复杂视图（有函数、表达式、表连接、分组等）都不能执行DML操作；
+
+	带有with check option 选项的视图
+	create or replace view vw_emp_2 as
+	  select id,last_name name, salary, dept_id did from emp_new_1
+	  where dept_id in (31,32,50,34)
+	  with check option；
+	如果更改（insert，update）的记过，不能经由视图查询，则该更新不能执行
+	删除操作可以执行
+
+	create or replace view vw_emp_2 as
+	  select id,last_name name, salary, dept_id did from emp_new_1
+	  where dept_id in (31,32,50,34)
+	  with check option；
+	只读视图操作部门执行dml操作
+
+  分页操作
+	sql server: top
+	mysql: limit
+	oracle: rownum
+	
+	rownum: 伪列
+	select rownum,id,first_name from emp_new_1;
+
+	显示s_emp表中的第一页，每页5行
+	select id,first_name from s_emp where rownum <6;
+	显示第二页
+	select id,first_name from s_emp where rownum between 6 and 10;
+	
+	rownum是给查询的结果集编号.这个号一旦确定是不能更改的.不能使用>或>=运算符；
+	
+	每页m行，第n页
+	select * from 
+	  (select rownum rm, id, first_name,salary from 
+	  (select salary,id,first_name from s_emp order by salary desc) 
+	   where rownum < n*m +1) where rm > (n-1)*m;
+
+	
